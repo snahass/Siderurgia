@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Convertidor LD — Diagrama Interactivo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: #0a0e17;
+    color: #e0e4ec;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    text-align: center;
+    padding: 30px 20px 10px;
+  }
+
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #ff6b35, #ffd700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+  }
+
+  .header p {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin-top: 6px;
+  }
+
+  .main-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 30px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* SVG Container */
+  .svg-container {
+    flex: 1 1 500px;
+    max-width: 550px;
+    min-width: 340px;
+  }
+
+  svg {
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 0 40px rgba(255, 107, 53, 0.1));
+  }
+
+  /* Clickable zones */
+  .zone {
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .zone:hover {
+    filter: brightness(1.3);
+  }
+
+  .zone:hover .zone-highlight {
+    opacity: 0.3;
+  }
+
+  .zone-highlight {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .zone.active .zone-highlight {
+    opacity: 0.4;
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.6; }
+  }
+
+  /* Labels in SVG */
+  .svg-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    fill: #9ca3af;
+    pointer-events: none;
+  }
+
+  .svg-label-bold {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    fill: #e0e4ec;
+    pointer-events: none;
+  }
+
+  /* Info panel */
+  .info-panel {
+    flex: 1 1 350px;
+    max-width: 500px;
+    min-width: 300px;
+  }
+
+  .info-card {
+    background: linear-gradient(135deg, #111827, #1a2035);
+    border: 1px solid #1f2937;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+    transition: all 0.4s ease;
+  }
+
+  .info-card.active {
+    border-color: #ff6b35;
+    box-shadow: 0 0 30px rgba(255, 107, 53, 0.15);
+  }
+
+  .info-card h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .info-card .icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .info-card p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #9ca3af;
+    margin-bottom: 10px;
+  }
+
+  .info-card .reaction {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    background: rgba(255, 107, 53, 0.1);
+    border: 1px solid rgba(255, 107, 53, 0.2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 8px 0;
+    color: #ffd700;
+  }
+
+  .info-card .detail {
+    font-size: 0.82rem;
+    color: #6b7280;
+    border-left: 3px solid #ff6b35;
+    padding-left: 12px;
+    margin-top: 10px;
+  }
+
+  .info-card .tag {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-right: 6px;
+    margin-bottom: 4px;
+  }
+
+  .tag-entrada { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+  .tag-salida { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+  .tag-proceso { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+
+  /* Summary cards at bottom */
+  .summary-section {
+    max-width: 1200px;
+    margin: 10px auto 40px;
+    padding: 0 20px;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  .summary-card {
+    background: linear-gradient(135deg, #111827, #1a2035);
+    border: 1px solid #1f2937;
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .summary-card h4 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    color: #ff6b35;
+  }
+
+  .summary-card ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .summary-card li {
+    font-size: 0.85rem;
+    color: #9ca3af;
+    padding: 4px 0;
+    padding-left: 16px;
+    position: relative;
+  }
+
+  .summary-card li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: #ff6b35;
+  }
+
+  /* Animations for arrows */
+  @keyframes flow-down {
+    0% { transform: translateY(-5px); opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { transform: translateY(5px); opacity: 0.4; }
+  }
+
+  @keyframes flow-up {
+    0% { transform: translateY(5px); opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { transform: translateY(-5px); opacity: 0.4; }
+  }
+
+  .arrow-down { animation: flow-down 1.5s ease-in-out infinite; }
+  .arrow-up { animation: flow-up 1.5s ease-in-out infinite; }
+
+  @keyframes o2-flow {
+    0% { transform: translateY(-8px); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateY(8px); opacity: 0; }
+  }
+
+  .o2-particle {
+    animation: o2-flow 1s ease-in-out infinite;
+  }
+
+  .o2-particle:nth-child(2) { animation-delay: 0.3s; }
+  .o2-particle:nth-child(3) { animation-delay: 0.6s; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .header h1 { font-size: 1.5rem; }
+    .main-container { padding: 10px; gap: 16px; }
+    .info-card { padding: 16px; }
+  }
+
+  .instructions {
+    text-align: center;
+    padding: 0 20px 10px;
+    color: #4b5563;
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .blink {
+    animation: blink-anim 1.5s ease-in-out infinite;
+  }
+
+  @keyframes blink-anim {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Sequence bar */
+  .sequence-bar {
+    max-width: 1200px;
+    margin: 0 auto 20px;
+    padding: 0 20px;
+  }
+
+  .sequence-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: linear-gradient(135deg, #111827, #1a2035);
+    border: 1px solid #1f2937;
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .seq-step {
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #6b7280;
+    transition: all 0.3s;
+  }
+
+  .seq-step.current {
+    background: rgba(255, 107, 53, 0.2);
+    color: #ff6b35;
+    border: 1px solid rgba(255, 107, 53, 0.4);
+    font-weight: 700;
+  }
+
+  .seq-arrow {
+    color: #374151;
+    font-size: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ Convertidor LD</h1>
+  <p>Aceración Primaria — Soplado con Oxígeno</p>
+</div>
+
+<div class="instructions">
+  <span class="blink">●</span> Hacé click en cada zona del convertidor para ver los detalles
+</div>
+
+<div class="sequence-bar">
+  <div class="sequence-flow">
+    <span class="seq-step">Alto Horno</span>
+    <span class="seq-arrow">→</span>
+    <span class="seq-step">Arrabio líquido</span>
+    <span class="seq-arrow">→</span>
+    <span class="seq-step current">🔥 CONVERTIDOR LD</span>
+    <span class="seq-arrow">→</span>
+    <span class="seq-step">Acero líquido</span>
+    <span class="seq-arrow">→</span>
+    <span class="seq-step">Metalurgia Cuchara</span>
+    <span class="seq-arrow">→</span>
+    <span class="seq-step">Colada Continua</span>
+  </div>
+</div>
+
+<div class="main-container">
+  <!-- SVG Diagram -->
+  <div class="svg-container">
+    <svg viewBox="0 0 500 650" xmlns="http://www.w3.org/2000/svg">
+      <!-- Background glow -->
+      <defs>
+        <radialGradient id="innerGlow" cx="50%" cy="60%" r="40%">
+          <stop offset="0%" stop-color="#ff6b35" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#ff6b35" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="steelGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4b5563"/>
+          <stop offset="100%" stop-color="#374151"/>
+        </linearGradient>
+        <linearGradient id="meltGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#ff6b35"/>
+          <stop offset="60%" stop-color="#dc2626"/>
+          <stop offset="100%" stop-color="#991b1b"/>
+        </linearGradient>
+        <linearGradient id="slagGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#854d0e"/>
+          <stop offset="100%" stop-color="#713f12"/>
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- CONVERTIDOR BODY - Pear shape -->
+      <!-- Outer shell -->
+      <path d="M 170 120 L 170 400 Q 170 500 250 520 Q 330 500 330 400 L 330 120 Z" 
+            fill="url(#steelGrad)" stroke="#6b7280" stroke-width="2"/>
+      
+      <!-- Inner refractory lining -->
+      <path d="M 185 130 L 185 395 Q 185 485 250 505 Q 315 485 315 395 L 315 130 Z" 
+            fill="#1a1a2e" stroke="#374151" stroke-width="1"/>
+
+      <!-- Inner glow -->
+      <ellipse cx="250" cy="350" rx="60" ry="120" fill="url(#innerGlow)"/>
+
+      <!-- MOUTH / BOCA (top opening) -->
+      <g class="zone" id="zone-boca" onclick="showInfo('boca')">
+        <rect class="zone-highlight" x="160" y="90" width="180" height="50" rx="5" fill="#3b82f6"/>
+        <ellipse cx="250" cy="120" rx="80" ry="18" fill="#1f2937" stroke="#6b7280" stroke-width="2"/>
+        <ellipse cx="250" cy="120" rx="65" ry="12" fill="#111827" stroke="#4b5563" stroke-width="1"/>
+        
+        <!-- Gases escaping -->
+        <g filter="url(#glow)">
+          <circle cx="230" cy="95" r="4" fill="#fbbf24" opacity="0.5" class="arrow-up"/>
+          <circle cx="250" cy="88" r="5" fill="#fbbf24" opacity="0.6" class="arrow-up" style="animation-delay:0.3s"/>
+          <circle cx="270" cy="92" r="4" fill="#fbbf24" opacity="0.5" class="arrow-up" style="animation-delay:0.6s"/>
+        </g>
+        
+        <text x="250" y="75" text-anchor="middle" class="svg-label-bold">BOCA</text>
+        <text x="250" y="62" text-anchor="middle" class="svg-label" font-size="9">Gases: CO, CO₂</text>
+      </g>
+
+      <!-- LANZA DE OXÍGENO -->
+      <g class="zone" id="zone-lanza" onclick="showInfo('lanza')">
+        <rect class="zone-highlight" x="240" y="20" width="20" height="220" rx="3" fill="#60a5fa"/>
+        <!-- Lanza tube -->
+        <rect x="246" y="15" width="8" height="200" rx="4" fill="#60a5fa" stroke="#3b82f6" stroke-width="1"/>
+        
+        <!-- Cooling water arrows -->
+        <text x="265" y="50" class="svg-label" font-size="8" fill="#60a5fa">H₂O ↓</text>
+        <text x="232" y="50" class="svg-label" font-size="8" fill="#60a5fa" text-anchor="end">↑ H₂O</text>
+        
+        <!-- O2 particles coming down -->
+        <g filter="url(#glow)">
+          <circle cx="250" cy="170" r="3" fill="#60a5fa" class="o2-particle"/>
+          <circle cx="250" cy="185" r="3" fill="#60a5fa" class="o2-particle"/>
+          <circle cx="250" cy="200" r="3" fill="#60a5fa" class="o2-particle"/>
+        </g>
+        
+        <!-- O2 jet impact zone -->
+        <ellipse cx="250" cy="220" rx="25" ry="8" fill="#60a5fa" opacity="0.2">
+          <animate attributeName="rx" values="20;30;20" dur="1s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.1;0.3;0.1" dur="1s" repeatCount="indefinite"/>
+        </ellipse>
+        
+        <text x="295" y="100" class="svg-label-bold" fill="#60a5fa">LANZA O₂</text>
+        <text x="295" y="115" class="svg-label" font-size="9" fill="#60a5fa">O₂ puro 99.5%</text>
+        <text x="295" y="128" class="svg-label" font-size="9" fill="#60a5fa">Mach 2</text>
+      </g>
+
+      <!-- ESCORIA (slag layer) -->
+      <g class="zone" id="zone-escoria" onclick="showInfo('escoria')">
+        <rect class="zone-highlight" x="183" y="250" width="134" height="45" fill="#eab308"/>
+        <path d="M 185 250 L 315 250 L 315 295 L 185 295 Z" fill="url(#slagGrad)" opacity="0.8"/>
+        <!-- Wavy top -->
+        <path d="M 185 250 Q 210 240, 235 250 Q 260 260, 285 250 Q 300 243, 315 250" 
+              fill="none" stroke="#eab308" stroke-width="1.5" opacity="0.6"/>
+        
+        <text x="370" y="275" class="svg-label-bold" fill="#eab308">ESCORIA</text>
+        <line x1="315" y1="272" x2="360" y2="275" stroke="#eab308" stroke-width="0.5" opacity="0.5"/>
+      </g>
+
+      <!-- ARRABIO / ACERO LÍQUIDO (main bath) -->
+      <g class="zone" id="zone-bano" onclick="showInfo('bano')">
+        <rect class="zone-highlight" x="183" y="295" width="134" height="200" rx="5" fill="#ef4444"/>
+        <path d="M 185 295 L 315 295 L 315 395 Q 315 485 250 505 Q 185 485 185 395 Z" 
+              fill="url(#meltGrad)" opacity="0.7"/>
+        
+        <!-- Bubbles -->
+        <circle cx="220" cy="380" r="4" fill="#fbbf24" opacity="0.3">
+          <animate attributeName="cy" values="420;340" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.5;0" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="260" cy="400" r="3" fill="#fbbf24" opacity="0.3">
+          <animate attributeName="cy" values="440;350" dur="1.8s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.4;0" dur="1.8s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="280" cy="370" r="5" fill="#fbbf24" opacity="0.3">
+          <animate attributeName="cy" values="430;330" dur="2.2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.5;0" dur="2.2s" repeatCount="indefinite"/>
+        </circle>
+        
+        <text x="370" y="400" class="svg-label-bold" fill="#f87171">BAÑO</text>
+        <text x="370" y="415" class="svg-label" font-size="9" fill="#f87171">METÁLICO</text>
+        <text x="370" y="430" class="svg-label" font-size="8">~1650°C</text>
+        <line x1="315" y1="400" x2="360" y2="400" stroke="#f87171" stroke-width="0.5" opacity="0.5"/>
+      </g>
+
+      <!-- REVESTIMIENTO REFRACTARIO -->
+      <g class="zone" id="zone-refractario" onclick="showInfo('refractario')">
+        <rect class="zone-highlight" x="155" y="130" width="30" height="380" fill="#a855f7"/>
+        <!-- Left wall label -->
+        <text x="130" y="300" class="svg-label" font-size="8" fill="#a855f7" 
+              transform="rotate(-90, 130, 300)">REFRACTARIO MgO-C</text>
+      </g>
+
+      <!-- ENTRADA ARRABIO (left arrow) -->
+      <g class="zone" id="zone-carga" onclick="showInfo('carga')">
+        <rect class="zone-highlight" x="30" y="130" width="140" height="50" rx="5" fill="#22c55e"/>
+        <!-- Arrow -->
+        <path d="M 40 155 L 140 155 L 140 140 L 170 160 L 140 180 L 140 165 L 40 165 Z" 
+              fill="#22c55e" opacity="0.6"/>
+        <text x="90" y="135" text-anchor="middle" class="svg-label-bold" fill="#22c55e">CARGA</text>
+        <text x="90" y="195" text-anchor="middle" class="svg-label" font-size="8" fill="#22c55e">80% arrabio</text>
+        <text x="90" y="208" text-anchor="middle" class="svg-label" font-size="8" fill="#22c55e">20% chatarra</text>
+        <text x="90" y="221" text-anchor="middle" class="svg-label" font-size="8" fill="#22c55e">+ cal (CaO)</text>
+      </g>
+
+      <!-- SALIDA ACERO (right arrow, bottom) -->
+      <g class="zone" id="zone-sangrado" onclick="showInfo('sangrado')">
+        <rect class="zone-highlight" x="330" y="460" width="140" height="50" rx="5" fill="#f97316"/>
+        <path d="M 330 480 L 380 480 L 380 465 L 410 485 L 380 505 L 380 490 L 330 490 Z" 
+              fill="#f97316" opacity="0.6"/>
+        <text x="440" y="478" class="svg-label-bold" fill="#f97316">SANGRADO</text>
+        <text x="440" y="495" class="svg-label" font-size="8" fill="#f97316">Acero líquido</text>
+        <text x="440" y="508" class="svg-label" font-size="8" fill="#f97316">→ Cuchara</text>
+      </g>
+
+      <!-- TOLVAS SUPERIORES (additions) -->
+      <g class="zone" id="zone-adiciones" onclick="showInfo('adiciones')">
+        <rect class="zone-highlight" x="60" y="30" width="100" height="60" rx="5" fill="#06b6d4"/>
+        <!-- Hopper shape -->
+        <path d="M 70 35 L 130 35 L 130 60 L 110 80 L 90 80 L 70 60 Z" 
+              fill="#164e63" stroke="#06b6d4" stroke-width="1.5"/>
+        <line x1="100" y1="80" x2="170" y2="130" stroke="#06b6d4" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+        <text x="100" y="50" text-anchor="middle" class="svg-label" font-size="9" fill="#06b6d4">TOLVA</text>
+        <text x="100" y="100" text-anchor="middle" class="svg-label" font-size="8" fill="#06b6d4">Cal, fundentes,</text>
+        <text x="100" y="112" text-anchor="middle" class="svg-label" font-size="8" fill="#06b6d4">ferroaleaciones</text>
+      </g>
+
+      <!-- TIMER / DURATION -->
+      <g>
+        <rect x="340" y="30" width="140" height="50" rx="10" fill="#111827" stroke="#374151" stroke-width="1"/>
+        <text x="410" y="52" text-anchor="middle" class="svg-label-bold" font-size="14">⏱ 15-20 min</text>
+        <text x="410" y="68" text-anchor="middle" class="svg-label" font-size="9">Duración del soplo</text>
+      </g>
+
+      <!-- Temperature indicator -->
+      <g>
+        <rect x="340" y="540" width="140" height="45" rx="10" fill="#111827" stroke="#374151" stroke-width="1"/>
+        <text x="410" y="560" text-anchor="middle" class="svg-label-bold" font-size="14" fill="#ff6b35">🌡 1650°C</text>
+        <text x="410" y="575" text-anchor="middle" class="svg-label" font-size="9">Temp. del baño</text>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Info Panel -->
+  <div class="info-panel">
+    <div class="info-card" id="card-default">
+      <h3><span class="icon" style="background:#ff6b3520; color:#ff6b35;">🔥</span> ¿Qué es el Convertidor LD?</h3>
+      <p>El Convertidor LD (Linz-Donawitz) transforma el <strong>arrabio líquido</strong> del Alto Horno en <strong>acero</strong> soplando <strong>oxígeno puro</strong> sobre el baño metálico.</p>
+      <p>El O₂ quema las impurezas (C, Si, Mn, P) en solo <strong>15-20 minutos</strong>. Es el proceso más rápido de la siderurgia.</p>
+      <div class="detail">Hacé click en cada zona del diagrama para ver los detalles.</div>
+    </div>
+
+    <div class="info-card" id="card-lanza" style="display:none;">
+      <h3><span class="icon" style="background:#3b82f620; color:#60a5fa;">💨</span> Lanza de Oxígeno</h3>
+      <p>Tubo refrigerado con agua que baja hasta ~2m del baño. Sopla <strong>O₂ puro (99.5%)</strong> a velocidad <strong>supersónica (Mach 2)</strong>.</p>
+      <div class="reaction">O₂ puro → quema C, Si, Mn, P del arrabio</div>
+      <p>El chorro de O₂ impacta el baño creando una zona de reacción violenta. Las impurezas se oxidan y van a la escoria o salen como gas.</p>
+      <div class="detail">¿Por qué O₂ puro y no aire? Porque el aire tiene 78% N₂ que enfriaría el baño y metería nitrógeno al acero (fragiliza).</div>
+    </div>
+
+    <div class="info-card" id="card-boca" style="display:none;">
+      <h3><span class="icon" style="background:#fbbf2420; color:#fbbf24;">💨</span> Boca del Convertidor</h3>
+      <p>Abertura superior por donde salen los <strong>gases de reacción</strong> y por donde se introduce la lanza y la carga.</p>
+      <div class="reaction">C + O₂ → CO / CO₂ ↑ (salen como gas)</div>
+      <p>Los gases se capturan y se pueden usar como combustible (gas LD). El carbono baja de <strong>3-5% → 0.03-0.5%</strong>.</p>
+      <span class="tag tag-salida">CO ↑</span>
+      <span class="tag tag-salida">CO₂ ↑</span>
+      <span class="tag tag-salida">Polvo ↑</span>
+    </div>
+
+    <div class="info-card" id="card-escoria" style="display:none;">
+      <h3><span class="icon" style="background:#eab30820; color:#eab308;">🧱</span> Escoria</h3>
+      <p>Capa que flota sobre el baño metálico. Atrapa las impurezas oxidadas.</p>
+      <div class="reaction">SiO₂ + CaO → silicato de calcio (escoria)</div>
+      <div class="reaction">P₂O₅ + 3CaO → Ca₃(PO₄)₂ (escoria)</div>
+      <p>La <strong>cal (CaO)</strong> es clave: hace la escoria <strong>básica</strong>, lo que permite atrapar el <strong>fósforo</strong>. Sin cal, el P no se puede eliminar.</p>
+      <div class="detail">La basicidad (CaO/SiO₂) se controla para optimizar la desfosforación. Escoria básica = B > 2.5</div>
+    </div>
+
+    <div class="info-card" id="card-bano" style="display:none;">
+      <h3><span class="icon" style="background:#ef444420; color:#f87171;">🔥</span> Baño Metálico</h3>
+      <p>Mezcla de arrabio + chatarra a <strong>~1650°C</strong>. Acá ocurren todas las reacciones de oxidación.</p>
+      <div class="reaction">C + ½O₂ → CO (descarburación)</div>
+      <div class="reaction">Si + O₂ → SiO₂ (va a escoria)</div>
+      <div class="reaction">Mn + ½O₂ → MnO (va a escoria)</div>
+      <p><strong>Secuencia de oxidación:</strong> Primero se oxida el Si y Mn (primeros 5 min), después el C (resto del soplo). El P se elimina durante todo el proceso si hay suficiente CaO.</p>
+      <div class="detail">La reacción es tan exotérmica que no necesita energía externa. La chatarra (20%) se agrega como refrigerante para absorber el exceso de calor.</div>
+    </div>
+
+    <div class="info-card" id="card-carga" style="display:none;">
+      <h3><span class="icon" style="background:#22c55e20; color:#22c55e;">📥</span> Carga del Convertidor</h3>
+      <p>La carga se hace con el convertidor inclinado:</p>
+      <p><strong>~80% arrabio líquido</strong> (viene del Alto Horno en torpedo)<br>
+      <strong>~20% chatarra</strong> (refrigerante + diluyente)<br>
+      <strong>+ Cal (CaO)</strong> para formar escoria básica</p>
+      <span class="tag tag-entrada">Arrabio 80%</span>
+      <span class="tag tag-entrada">Chatarra 20%</span>
+      <span class="tag tag-entrada">Cal CaO</span>
+      <div class="detail">El arrabio entra con: 3-5% C, ~1% Si, ~0.5% Mn, ~0.1% P, ~0.04% S. Después del soplo: 0.03-0.5% C y casi nada del resto.</div>
+    </div>
+
+    <div class="info-card" id="card-sangrado" style="display:none;">
+      <h3><span class="icon" style="background:#f9731620; color:#f97316;">📤</span> Sangrado</h3>
+      <p>Se inclina el convertidor y se vierte el <strong>acero líquido</strong> por la piquera a una <strong>cuchara de acería</strong>.</p>
+      <p>Durante el sangrado se agregan:</p>
+      <span class="tag tag-proceso">Desoxidantes (Al, FeSi)</span>
+      <span class="tag tag-proceso">Ferroaleaciones</span>
+      <span class="tag tag-proceso">Cal para escoria cuchara</span>
+      <div class="detail">El sangrado es "por piquera" (no por la boca) para evitar que la escoria del LD pase a la cuchara. La escoria del LD tiene mucho FeO y P₂O₅ → si pasa, revierte la desfosforación.</div>
+    </div>
+
+    <div class="info-card" id="card-refractario" style="display:none;">
+      <h3><span class="icon" style="background:#a855f720; color:#a855f7;">🧱</span> Revestimiento Refractario</h3>
+      <p>Ladrillos de <strong>MgO-C</strong> (magnesia-carbono) que protegen la carcasa de acero del baño a 1650°C.</p>
+      <p>Duran entre <strong>2000-5000 coladas</strong> dependiendo del cuidado. Es uno de los mayores costos del proceso.</p>
+      <div class="detail">El MgO resiste escoria básica. El C (grafito) mejora la resistencia al choque térmico y evita que la escoria moje el ladrillo.</div>
+    </div>
+
+    <div class="info-card" id="card-adiciones" style="display:none;">
+      <h3><span class="icon" style="background:#06b6d420; color:#06b6d4;">⬇️</span> Tolvas de Adiciones</h3>
+      <p>Desde arriba se agregan materiales durante el soplo:</p>
+      <span class="tag tag-entrada">Cal (CaO)</span>
+      <span class="tag tag-entrada">Dolomita</span>
+      <span class="tag tag-entrada">Mineral de hierro</span>
+      <p style="margin-top:8px;">La <strong>cal</strong> es la más importante: forma la escoria básica que atrapa P y S. Se agrega al inicio del soplo para que tenga tiempo de disolverse.</p>
+      <div class="detail">También se puede agregar mineral de hierro como refrigerante adicional si la temperatura sube demasiado.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Section -->
+<div class="summary-section">
+  <div class="summary-grid">
+    <div class="summary-card">
+      <h4>📥 Entradas</h4>
+      <ul>
+        <li>Arrabio líquido (~80%)</li>
+        <li>Chatarra (~20%)</li>
+        <li>Oxígeno puro (lanza)</li>
+        <li>Cal / CaO (fundente)</li>
+        <li>Dolomita, mineral</li>
+      </ul>
+    </div>
+    <div class="summary-card">
+      <h4>📤 Salidas</h4>
+      <ul>
+        <li>Acero líquido (0.03-0.5% C)</li>
+        <li>Escoria (SiO₂, CaO, P₂O₅, MnO)</li>
+        <li>Gases (CO, CO₂)</li>
+        <li>Polvo (partículas arrastradas)</li>
+      </ul>
+    </div>
+    <div class="summary-card">
+      <h4>🔑 Datos Clave</h4>
+      <ul>
+        <li>Duración: 15-20 min</li>
+        <li>Temperatura: ~1650°C</li>
+        <li>Capacidad: 150-300 ton</li>
+        <li>No usa energía externa</li>
+        <li>Proceso OXIDANTE</li>
+      </ul>
+    </div>
+    <div class="summary-card">
+      <h4>⚗️ Reacciones Principales</h4>
+      <ul>
+        <li>C + ½O₂ → CO</li>
+        <li>Si + O₂ → SiO₂</li>
+        <li>Mn + ½O₂ → MnO</li>
+        <li>2P + 5/2O₂ → P₂O₅</li>
+        <li>P₂O₅ + 3CaO → Ca₃(PO₄)₂</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  const cards = ['default','lanza','boca','escoria','bano','carga','sangrado','refractario','adiciones'];
+  const zones = ['lanza','boca','escoria','bano','carga','sangrado','refractario','adiciones'];
+
+  function showInfo(id) {
+    // Hide all cards
+    cards.forEach(c => {
+      document.getElementById('card-' + c).style.display = 'none';
+    });
+    // Show selected
+    document.getElementById('card-' + id).style.display = 'block';
+    document.getElementById('card-' + id).classList.add('active');
+
+    // Remove active from all zones
+    zones.forEach(z => {
+      const el = document.getElementById('zone-' + z);
+      if (el) el.classList.remove('active');
+    });
+    // Add active to selected
+    const zone = document.getElementById('zone-' + id);
+    if (zone) zone.classList.add('active');
+
+    // Remove active class after animation
+    setTimeout(() => {
+      document.getElementById('card-' + id).classList.remove('active');
+    }, 2000);
+  }
+</script>
+
+</body>
+</html>
